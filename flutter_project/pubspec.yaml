@@ -2,7 +2,7 @@ name: number_guessing_game
 description: A sleek number guessing game with difficulty levels, scoring, and hints.
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -18,6 +18,22 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo_padded.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/logo_padded.png"
 
 flutter:
   uses-material-design: true
+
+  fonts:
+    - family: "Press Start 2P"
+      fonts:
+        - asset: assets/fonts/PressStart2P-Regular.ttf
+    - family: "VT323"
+      fonts:
+        - asset: assets/fonts/VT323-Regular.ttf

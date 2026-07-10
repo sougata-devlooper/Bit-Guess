@@ -5,8 +5,8 @@ A bold, interactive, and visually striking number guessing game built with a mod
 ## Screenshots
 ### Old version
 <p align="center">
-  <img src="interface/materials/ss1_1.png" alt="Screenshot 1.1" width="350"/>
-  <img src="interface/materials/ss1_2.png" alt="Screenshot 1.2" width="350"/>
+  <img src="interface/materials/ss1_1.png" alt="Screenshot 1.1" width="500"/>
+  <img src="interface/materials/ss1_2.png" alt="Screenshot 1.2" width="500"/>
 </p>
 
 ### New verison

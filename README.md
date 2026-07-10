@@ -1,4 +1,4 @@
-# 🎯 Neo-Brutalist Number Guessing Game
+# 🎯 Bit-Guess
 
 A bold, interactive, and visually striking number guessing game built with a modern **neo-brutalist UI** and smooth backend logic.
 

@@ -1,8 +1,5 @@
 import 'dart:math';
-<<<<<<< HEAD
-=======
 import 'package:shared_preferences/shared_preferences.dart';
->>>>>>> 07df8e0 (Update flutter_project/lib/game_logic.dart)
 
 class GameConfig {
   final int maxRange;
@@ -35,10 +32,7 @@ class GameState {
   bool won = false;
   bool over = false;
   late DateTime startTime;
-<<<<<<< HEAD
-=======
   double elapsedTime = 0.0;
->>>>>>> 07df8e0 (Update flutter_project/lib/game_logic.dart)
   Map<String, int> bestScores = {};
   
   String message = "";
@@ -46,24 +40,16 @@ class GameState {
   int currentScore = 0;
 
   final Random _rand = Random();
-<<<<<<< HEAD
 
   GameState() {
     startNewGame('medium');
-=======
-  SharedPreferences? _prefs;
-
-  GameState() {
-    startNewGame('medium');
-    _initPrefs();
   }
 
-  Future<void> _initPrefs() async {
-    _prefs = await SharedPreferences.getInstance();
-    bestScores['easy'] = _prefs?.getInt('best_easy') ?? 0;
-    bestScores['medium'] = _prefs?.getInt('best_medium') ?? 0;
-    bestScores['hard'] = _prefs?.getInt('best_hard') ?? 0;
->>>>>>> 07df8e0 (Update flutter_project/lib/game_logic.dart)
+  Future<void> loadBestScores() async {
+    final prefs = await SharedPreferences.getInstance();
+    bestScores['easy'] = prefs.getInt('bestScore_easy') ?? 0;
+    bestScores['medium'] = prefs.getInt('bestScore_medium') ?? 0;
+    bestScores['hard'] = prefs.getInt('bestScore_hard') ?? 0;
   }
 
   void startNewGame(String diff) {
@@ -78,10 +64,7 @@ class GameState {
     won = false;
     over = false;
     startTime = DateTime.now();
-<<<<<<< HEAD
-=======
     elapsedTime = 0.0;
->>>>>>> 07df8e0 (Update flutter_project/lib/game_logic.dart)
     message = "Guess between 1-$rangeMax!";
     messageStatus = "normal";
   }
@@ -105,11 +88,7 @@ class GameState {
     if (guess == target) {
       won = true;
       over = true;
-<<<<<<< HEAD
-      double elapsed = DateTime.now().difference(startTime).inMilliseconds / 1000.0;
-=======
       elapsedTime = DateTime.now().difference(startTime).inMilliseconds / 1000.0;
->>>>>>> 07df8e0 (Update flutter_project/lib/game_logic.dart)
       int score = (1000.0 / attempts * (rangeMax / 100.0)).round();
       score = max(10, score);
       currentScore = score;
@@ -117,10 +96,9 @@ class GameState {
       int best = bestScores[difficulty] ?? 0;
       if (score > best) {
         bestScores[difficulty] = score;
-<<<<<<< HEAD
-=======
-        _prefs?.setInt('best_$difficulty', score);
->>>>>>> 07df8e0 (Update flutter_project/lib/game_logic.dart)
+        SharedPreferences.getInstance().then((prefs) {
+          prefs.setInt('bestScore_$difficulty', score);
+        });
       }
       
       message = "🎉 Correct! The number was $target!";
@@ -130,10 +108,7 @@ class GameState {
 
     if (remaining <= 0) {
       over = true;
-<<<<<<< HEAD
-=======
       elapsedTime = DateTime.now().difference(startTime).inMilliseconds / 1000.0;
->>>>>>> 07df8e0 (Update flutter_project/lib/game_logic.dart)
       message = "💀 Game Over! The number was $target.";
       messageStatus = "lose";
       return;
@@ -163,11 +138,7 @@ class GameState {
 
     List<String> hintTypes = ['parity', 'range', 'divisible'];
     String hintType = hintTypes[_rand.nextInt(hintTypes.length)];
-<<<<<<< HEAD
-    String h;
-=======
     String h = "";
->>>>>>> 07df8e0 (Update flutter_project/lib/game_logic.dart)
 
     if (hintType == 'parity') {
       h = "The number is ${target % 2 == 0 ? 'even' : 'odd'}.";
@@ -193,17 +164,6 @@ class GameState {
           return true;
         }
         h = "The number is ${isPrime(target) ? 'prime' : 'not prime'}.";
-<<<<<<< HEAD
-      } else {
-        h = ""; // already assigned
-        for (int d in [3, 5, 7, 4, 6]) {
-          if (target % d == 0) {
-             h = "The number is divisible by $d.";
-             break;
-          }
-        }
-=======
->>>>>>> 07df8e0 (Update flutter_project/lib/game_logic.dart)
       }
     }
 

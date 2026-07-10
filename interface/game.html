@@ -4,334 +4,144 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="A sleek number guessing game with difficulty levels, scoring, and hints." />
-  <title>Number Guessing Game</title>
+  <meta name="description" content="BitGuess — A retro pixel number guessing game with difficulty levels, scoring, and hints." />
+  <title>BitGuess — Number Guessing Game</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='game.css') }}" />
 </head>
 
 <body>
-  <div class="pixel-bg"></div>
+
+  <!-- Animated Pixel Background Canvas -->
+  <canvas id="bg-canvas"></canvas>
+  <!-- Confetti Canvas -->
   <canvas id="confetti-canvas"></canvas>
+  <!-- Theme Ripple (animated) -->
+  <div id="theme-ripple"></div>
 
-  <!-- Theme Toggle -->
-  <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Theme">🌙</button>
+  <!-- ══════════════════════════════════
+       PAGE 1 — HOME
+       ══════════════════════════════════ -->
+  <div class="page" id="page-home">
+    <button class="retro-btn theme-toggle" id="theme-toggle-home" aria-label="Toggle Theme">🌙</button>
 
-  <div class="game-container" id="game-container">
-    <h1>NUMBER GUESSER</h1>
-    <p class="subtitle">Pick a difficulty</p>
+    <div class="game-container">
+      <img src="{{ url_for('static', filename='materials/logo.png') }}" alt="BitGuess Logo" class="app-logo" id="home-logo" />
 
-    <!-- Difficulty -->
-    <div class="difficulty-bar" id="difficulty-bar">
-      <button class="diff-btn" data-diff="easy">EASY</button>
-      <button class="diff-btn active" data-diff="medium">MEDIUM</button>
-      <button class="diff-btn" data-diff="hard">HARD</button>
-    </div>
+      <h1 id="home-title">NUMBER GUESSER</h1>
+      <p class="subtitle">Choose your difficulty</p>
 
-    <!-- Stats -->
-    <div class="stats-row" id="stats-row">
-      <div class="stat-item">
-        <span class="stat-value" id="stat-attempts">0</span>
-        <span class="stat-label">TRIES</span>
+      <div class="difficulty-bar" id="home-difficulty-bar">
+        <button class="retro-btn diff-btn" data-diff="easy" id="home-btn-easy">EASY</button>
+        <button class="retro-btn diff-btn active" data-diff="medium" id="home-btn-medium">MEDIUM</button>
+        <button class="retro-btn diff-btn" data-diff="hard" id="home-btn-hard">HARD</button>
       </div>
-      <div class="stat-item">
-        <span class="stat-value" id="stat-remaining">8</span>
-        <span class="stat-label">HP</span>
+
+      <div class="diff-description" id="diff-description">
+        <span id="diff-label">Medium (1–100) · 8 tries · 2 hints</span>
       </div>
-      <div class="stat-item">
-        <span class="stat-value" id="stat-hints">2</span>
-        <span class="stat-label">MP</span>
+
+      <button class="retro-btn btn-start" id="start-btn">▶ START GAME</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       PAGE 2 — GAME
+       ══════════════════════════════════ -->
+  <div class="page" id="page-game" style="display:none;">
+    <button class="retro-btn theme-toggle" id="theme-toggle-game" aria-label="Toggle Theme">🌙</button>
+
+    <div class="game-container" id="game-container">
+      <div class="game-header">
+        <img src="{{ url_for('static', filename='materials/logo.png') }}" alt="BitGuess" class="app-logo-small" />
+        <h1 id="game-title">NUMBER GUESSER</h1>
+      </div>
+      <p class="subtitle" id="game-subtitle">Guess between 1-100!</p>
+
+      <!-- Stats Row -->
+      <div class="stats-row" id="stats-row">
+        <div class="stat-item">
+          <span class="stat-value" id="stat-attempts">0</span>
+          <span class="stat-label">TRIES</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-remaining">8</span>
+          <span class="stat-label">HP</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="stat-hints">2</span>
+          <span class="stat-label">MP</span>
+        </div>
+      </div>
+
+      <!-- Message Box -->
+      <div class="message-box" id="message-box">
+        <span class="message-text" id="message-text">Guess between 1-100!</span>
+      </div>
+
+      <!-- Input Group -->
+      <div class="input-group">
+        <input type="number" class="guess-input" id="guess-input"
+          placeholder="1-100" min="1" max="100" autocomplete="off" />
+        <button class="retro-btn btn-primary" id="guess-btn">GUESS</button>
+      </div>
+
+      <!-- Action Row -->
+      <div class="action-row">
+        <button class="retro-btn btn-hint" id="hint-btn">HINT(2)</button>
+        <button class="retro-btn btn-reset" id="reset-btn">RESET</button>
+      </div>
+
+      <!-- History -->
+      <div class="history-section" id="history-section" style="display:none;">
+        <div class="history-label">LOGS</div>
+        <div class="history-track" id="history-track"></div>
       </div>
     </div>
+  </div>
 
-    <!-- Message -->
-    <div class="message-box" id="message-box">
-      <span class="message-text" id="message-text">Guess between 1-100!</span>
-    </div>
+  <!-- ══════════════════════════════════
+       PAGE 3 — RESULT (Win / Lose)
+       ══════════════════════════════════ -->
+  <div class="page" id="page-result" style="display:none;">
+    <button class="retro-btn theme-toggle" id="theme-toggle-result" aria-label="Toggle Theme">🌙</button>
 
-    <!-- Input -->
-    <div class="input-group">
-      <input type="number" class="guess-input" id="guess-input" placeholder="1-100" min="1" max="100"
-        autocomplete="off" />
-      <button class="btn btn-primary" id="guess-btn">GUESS</button>
-    </div>
+    <div class="game-container result-container" id="result-container">
+      <img src="{{ url_for('static', filename='materials/logo.png') }}" alt="BitGuess" class="app-logo" />
 
-    <!-- Actions -->
-    <div class="action-row">
-      <button class="btn btn-hint" id="hint-btn">HINT(2)</button>
-      <button class="btn btn-reset" id="reset-btn">RESET</button>
-    </div>
+      <div class="result-status" id="result-status">🎉 YOU WIN!</div>
+      <div class="result-number" id="result-number">The number was <span id="result-num-val">?</span></div>
 
-    <!-- Guess History -->
-    <div class="history-section" id="history-section" style="display:none;">
-      <div class="history-label">LOGS</div>
-      <div class="history-track" id="history-track"></div>
-    </div>
+      <div class="result-score-box" id="result-score-box">
+        <div class="score-value" id="result-score">SCORE: 0</div>
+        <div class="score-detail" id="result-detail"></div>
+      </div>
 
-    <!-- Score (shown on win) -->
-    <div class="score-display" id="score-display">
-      <div class="score-value" id="score-value">0</div>
-      <div class="score-detail" id="score-detail"></div>
+      <div class="result-stats" id="result-stats">
+        <div class="stat-item">
+          <span class="stat-value" id="result-tries">0</span>
+          <span class="stat-label">TRIES</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="result-time">0.0S</span>
+          <span class="stat-label">TIME</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" id="result-best">0</span>
+          <span class="stat-label">BEST</span>
+        </div>
+      </div>
+
+      <div class="result-actions">
+        <button class="retro-btn btn-play-again" id="play-again-btn">▶ PLAY AGAIN</button>
+        <button class="retro-btn btn-home" id="home-btn">🏠 HOME</button>
+      </div>
     </div>
   </div>
 
   <!-- Hint Toast -->
   <div class="hint-toast" id="hint-toast"></div>
 
-  <script>
-    // ── Theme Toggle Logic ──
-    const themeToggle = document.getElementById('theme-toggle');
-    const htmlEl = document.documentElement;
-
-    // Check local storage or system preference
-    const savedTheme = localStorage.getItem('pixel-theme') || 'light';
-    htmlEl.setAttribute('data-theme', savedTheme);
-    themeToggle.textContent = savedTheme === 'light' ? '🌙' : '☀️';
-
-    themeToggle.addEventListener('click', () => {
-      const current = htmlEl.getAttribute('data-theme');
-      const next = current === 'light' ? 'dark' : 'light';
-      htmlEl.setAttribute('data-theme', next);
-      localStorage.setItem('pixel-theme', next);
-      themeToggle.textContent = next === 'light' ? '🌙' : '☀️';
-    });
-
-    // ── DOM Elements ──
-    const guessInput = document.getElementById("guess-input");
-    const guessBtn = document.getElementById("guess-btn");
-    const hintBtn = document.getElementById("hint-btn");
-    const resetBtn = document.getElementById("reset-btn");
-    const messageBox = document.getElementById("message-box");
-    const messageText = document.getElementById("message-text");
-    const statAttempts = document.getElementById("stat-attempts");
-    const statRemaining = document.getElementById("stat-remaining");
-    const statHints = document.getElementById("stat-hints");
-    const historySection = document.getElementById("history-section");
-    const historyTrack = document.getElementById("history-track");
-    const scoreDisplay = document.getElementById("score-display");
-    const scoreValue = document.getElementById("score-value");
-    const scoreDetail = document.getElementById("score-detail");
-    const hintToast = document.getElementById("hint-toast");
-    const diffBar = document.getElementById("difficulty-bar");
-    const container = document.getElementById("game-container");
-    const canvas = document.getElementById("confetti-canvas");
-
-    let currentDifficulty = "medium";
-    let rangeMax = 100;
-    let maxAttempts = 8;
-    let hintsLeft = 2;
-    let gameOver = false;
-
-    // ── Initialize Game ──
-    async function startGame(difficulty) {
-      currentDifficulty = difficulty;
-      const res = await fetch("/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ difficulty }),
-      });
-      const data = await res.json();
-
-      rangeMax = data.range_max;
-      maxAttempts = data.max_attempts;
-      hintsLeft = data.hints;
-      gameOver = false;
-
-      // Update UI
-      guessInput.max = rangeMax;
-      guessInput.placeholder = `1-${rangeMax}`;
-      guessInput.value = "";
-      guessInput.disabled = false;
-      guessBtn.disabled = false;
-
-      statAttempts.textContent = "0";
-      statRemaining.textContent = maxAttempts;
-      statHints.textContent = hintsLeft;
-      hintBtn.textContent = `HINT(${hintsLeft})`;
-      hintBtn.disabled = false;
-
-      messageText.textContent = `Guess between 1-${rangeMax}!`;
-      messageBox.className = "message-box";
-
-      historyTrack.innerHTML = "";
-      historySection.style.display = "none";
-      scoreDisplay.classList.remove("visible");
-
-      // Highlight active difficulty
-      document.querySelectorAll(".diff-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.diff === difficulty);
-      });
-
-      guessInput.focus();
-    }
-
-    // ── Make a Guess ──
-    async function makeGuess() {
-      const val = guessInput.value.trim();
-      if (!val || gameOver) return;
-
-      const res = await fetch("/guess", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guess: val }),
-      });
-      const data = await res.json();
-
-      if (data.status === "error") {
-        container.classList.add("shake");
-        setTimeout(() => container.classList.remove("shake"), 400);
-        messageText.textContent = data.message;
-        return;
-      }
-
-      // Update stats
-      if (data.attempts !== undefined) {
-        statAttempts.textContent = data.attempts;
-      }
-      if (data.remaining !== undefined) {
-        statRemaining.textContent = data.remaining;
-      }
-
-      // Add to history
-      const num = parseInt(val);
-      addHistoryPip(num, data.status === "win" ? "correct" : (data.message.includes("higher") ? "low" : "high"));
-
-      messageText.textContent = data.message;
-      guessInput.value = "";
-
-      if (data.status === "win") {
-        gameOver = true;
-        messageBox.className = "message-box win";
-        guessInput.disabled = true;
-        guessBtn.disabled = true;
-        hintBtn.disabled = true;
-        statRemaining.textContent = "WIN";
-
-        // Show score
-        scoreValue.textContent = "SCORE:" + data.score;
-        const bestText = data.best_score > data.score ? ` (BEST:${data.best_score})` : " (NEW BEST!)";
-        scoreDetail.textContent = `${data.attempts} ATK - ${data.time}S${bestText}`;
-        scoreDisplay.classList.add("visible");
-
-        fireConfetti();
-      } else if (data.status === "lose") {
-        gameOver = true;
-        messageBox.className = "message-box lose";
-        guessInput.disabled = true;
-        guessBtn.disabled = true;
-        hintBtn.disabled = true;
-        statRemaining.textContent = "DEAD";
-
-        container.classList.add("shake");
-        setTimeout(() => container.classList.remove("shake"), 400);
-      }
-
-      guessInput.focus();
-    }
-
-    // ── Request Hint ──
-    async function requestHint() {
-      if (gameOver) return;
-      const res = await fetch("/hint", { method: "POST" });
-      const data = await res.json();
-
-      hintsLeft = data.hints_left ?? hintsLeft;
-      statHints.textContent = hintsLeft;
-      hintBtn.textContent = `HINT(${hintsLeft})`;
-      if (hintsLeft <= 0) hintBtn.disabled = true;
-
-      // Show toast
-      hintToast.textContent = data.hint;
-      hintToast.classList.add("show");
-      setTimeout(() => hintToast.classList.remove("show"), 3500);
-    }
-
-    // ── History Pip ──
-    function addHistoryPip(num, type) {
-      historySection.style.display = "block";
-      const pip = document.createElement("div");
-      pip.className = `history-pip ${type}`;
-      pip.textContent = num;
-      historyTrack.appendChild(pip);
-      historyTrack.scrollTop = historyTrack.scrollHeight;
-    }
-
-    // ── Confetti ──
-    function fireConfetti() {
-      const ctx = canvas.getContext("2d");
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-
-      const particles = [];
-      const colors = ["#facc15", "#f472b6", "#38bdf8", "#4ade80", "#e94560", "#ff2e63"];
-
-      for (let i = 0; i < 150; i++) {
-        // Blocky pixel confetti
-        const size = Math.random() > 0.5 ? 8 : 12;
-        particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height - canvas.height,
-          w: size,
-          h: size,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          vy: Math.random() * 4 + 3,
-          vx: (Math.random() - 0.5) * 4,
-          rot: 0, // No rotation for pixel feel
-          rv: 0,
-          opacity: 1,
-        });
-      }
-
-      let frame = 0;
-      function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        frame++;
-
-        particles.forEach(p => {
-          p.y += p.vy;
-          p.x += p.vx;
-          if (frame > 80) p.opacity -= 0.015;
-
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.globalAlpha = Math.max(0, p.opacity);
-          ctx.fillStyle = p.color;
-          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-
-          // Pixel border for confetti
-          ctx.strokeStyle = '#000';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(-p.w / 2, -p.h / 2, p.w, p.h);
-
-          ctx.restore();
-        });
-
-        if (frame < 160) requestAnimationFrame(animate);
-        else ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-      animate();
-    }
-
-    // ── Event Listeners ──
-    guessBtn.addEventListener("click", makeGuess);
-
-    guessInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") makeGuess();
-    });
-
-    hintBtn.addEventListener("click", requestHint);
-
-    resetBtn.addEventListener("click", () => startGame(currentDifficulty));
-
-    diffBar.addEventListener("click", (e) => {
-      if (e.target.classList.contains("diff-btn")) {
-        startGame(e.target.dataset.diff);
-      }
-    });
-
-    // ── Start on Load ──
-    startGame("medium");
-  </script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
-
 </html>

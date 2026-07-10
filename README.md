@@ -4,8 +4,10 @@ A bold, interactive, and visually striking number guessing game built with a mod
 
 ## Screenshots
 ### Old version
-![Game Screenshot](./interface/materials/ss1_1.png)
-![Game Screenshot](./interface/materials/ss1_2.png)  
+<p align="center">
+  <img src="interface/materials/ss1_1.png" alt="Screenshot 1.1" width="350"/>
+  <img src="interface/materials/ss1_2.png" alt="Screenshot 1.2" width="350"/>
+</p>
 
 ### New verison
 ![Game Screenshot](./interface/materials/ss2_1.png)
@@ -13,7 +15,7 @@ A bold, interactive, and visually striking number guessing game built with a mod
 ![Game Screenshot](./interface/materials/ss3_1.png)
 ![Game Screenshot](./interface/materials/ss3_2.png)  
 ![Game Screenshot](./interface/materials/ss4_1.png)
-![Game Screenshot](./interface/materials/ss4_1.png)
+![Game Screenshot](./interface/materials/ss4_2.png)
 
 👉 **[Try out by your own](https://number-guessing-application-one.vercel.app/)**
 

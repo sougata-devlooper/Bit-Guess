@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:confetti/confetti.dart';
 import 'game_logic.dart';
@@ -31,6 +33,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   String _hintToast = "";
   bool _showToast = false;
   Timer? _toastTimer;
+  bool _gameStarted = false;
+  PixelSweepStyle _currentSweepStyle = PixelSweepStyle.topLeft;
+  Duration _transitionDuration = const Duration(milliseconds: 800);
 
   // Background Animation
   late AnimationController _bgController;
@@ -38,6 +43,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _gameState.loadBestScores().then((_) {
+      if (mounted) setState(() {});
+    });
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _confettiController = ConfettiController(duration: const Duration(seconds: 3));
     
     _shakeController = AnimationController(
@@ -53,7 +62,17 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   }
 
   @override
+  void didUpdateWidget(GameScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isDark != widget.isDark) {
+      _currentSweepStyle = PixelSweepStyle.topLeft;
+      _transitionDuration = const Duration(milliseconds: 800);
+    }
+  }
+
+  @override
   void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
     _guessController.dispose();
     _guessFocus.dispose();
     _confettiController.dispose();
@@ -65,10 +84,107 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   void _startGame(String difficulty) {
     setState(() {
+      _currentSweepStyle = PixelSweepStyle.centerOutward;
+      _transitionDuration = const Duration(milliseconds: 400);
       _gameState.startNewGame(difficulty);
       _guessController.clear();
-      _guessFocus.requestFocus();
+      _gameStarted = true;
     });
+  }
+
+  void _goToModeSelection() {
+    setState(() {
+      _currentSweepStyle = PixelSweepStyle.outwardToCenter;
+      _transitionDuration = const Duration(milliseconds: 400);
+      _gameStarted = false;
+    });
+  }
+
+  void _showStatsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        Color bgColor = Colors.white;
+        Color textMain = Colors.black;
+        Color borderColor = Colors.black;
+        
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            decoration: BoxDecoration(
+              color: bgColor,
+              border: Border.all(color: borderColor, width: 4),
+              boxShadow: [
+                BoxShadow(color: borderColor, offset: const Offset(8, 8)),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "HIGH SCORES",
+                  style: TextStyle(fontFamily: 'Press Start 2P', fontSize: 18, color: textMain),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 25),
+                IntrinsicWidth(
+                  child: Column(
+                    children: ['easy', 'medium', 'hard'].map((diff) {
+                      int score = _gameState.bestScores[diff] ?? 0;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              diff.toUpperCase(),
+                              style: TextStyle(fontFamily: 'Press Start 2P', fontSize: 12, color: textMain),
+                            ),
+                            const SizedBox(width: 50),
+                            Text(
+                              score > 0 ? score.toString() : "---",
+                              style: TextStyle(fontFamily: 'Press Start 2P', fontSize: 12, color: textMain),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 25),
+                RetroButton(
+                  onPressed: () => Navigator.pop(context),
+                  color: const Color(0xFFFFD700), // yellow
+                  borderColor: borderColor,
+                  textColor: Colors.black,
+                  text: "CLOSE",
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _onKeypadTap(String val) {
+    if (_gameState.over) return;
+    if (_guessController.text.length < 3) {
+      setState(() {
+        _guessController.text += val;
+      });
+    }
+  }
+
+  void _onKeypadBackspace() {
+    if (_gameState.over) return;
+    if (_guessController.text.isNotEmpty) {
+      setState(() {
+        _guessController.text = _guessController.text.substring(0, _guessController.text.length - 1);
+      });
+    }
   }
 
   void _makeGuess() {
@@ -87,7 +203,33 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         _confettiController.play();
       }
     });
-    _guessFocus.requestFocus();
+  }
+
+  Widget _buildKeypadKey({
+    required String label,
+    required VoidCallback onPressed,
+    Color? color,
+  }) {
+    Color cardBg = widget.isDark ? GameTheme.darkCard : GameTheme.lightCard;
+    Color borderColor = widget.isDark ? GameTheme.darkBorder : GameTheme.lightBorder;
+    Color textMain = widget.isDark ? GameTheme.darkTextMain : GameTheme.lightTextMain;
+    Color keyColor = color ?? cardBg;
+    Color textColor = color != null ? Colors.black : textMain;
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: RetroButton(
+          onPressed: onPressed,
+          color: keyColor,
+          borderColor: borderColor,
+          textColor: textColor,
+          text: label,
+          fontSize: 16,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    );
   }
 
   void _requestHint() {
@@ -116,10 +258,34 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     Color patternColor = widget.isDark ? const Color(0x0DFFFFFF) : const Color(0x0D000000);
 
     return Scaffold(
-      backgroundColor: bgColor,
-      body: Stack(
-        children: [
-          // Background Animation
+      backgroundColor: Colors.black,
+      body: AnimatedSwitcher(
+        duration: _transitionDuration,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          final isIncoming = child.key == ValueKey<String>('${widget.isDark}_$_gameStarted');
+          if (!isIncoming) {
+            return IgnorePointer(child: child);
+          }
+          return AnimatedBuilder(
+            animation: animation,
+            builder: (context, childWidget) {
+              return ClipPath(
+                clipper: PixelSweepClipper(
+                  progress: animation.value,
+                  style: _currentSweepStyle,
+                ),
+                child: childWidget,
+              );
+            },
+            child: child,
+          );
+        },
+        child: Container(
+          key: ValueKey<String>('${widget.isDark}_$_gameStarted'),
+          color: bgColor,
+          child: Stack(
+            children: [
+              // Background Animation
           AnimatedBuilder(
             animation: _bgController,
             builder: (context, child) {
@@ -132,26 +298,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               );
             },
           ),
-          
-          // Confetti
-          Align(
-            alignment: Alignment.topCenter,
-            child: ConfettiWidget(
-              confettiController: _confettiController,
-              blastDirectionality: BlastDirectionality.explosive,
-              shouldLoop: false,
-              colors: const [
-                Color(0xFFFACC15), Color(0xFFF472B6), 
-                Color(0xFF38BDF8), Color(0xFF4ADE80), 
-                Color(0xFFE94560), Color(0xFFFF2E63)
-              ],
-              createParticlePath: (size) {
-                final path = Path();
-                path.addRect(Rect.fromLTWH(0, 0, 12, 12));
-                return path;
-              },
-            ),
-          ),
+
 
           // Theme Toggle
           Positioned(
@@ -180,7 +327,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               child: SingleChildScrollView(
                 child: Container(
                   width: MediaQuery.of(context).size.width * 0.92,
-                  maxWidth: 480,
+                  constraints: const BoxConstraints(maxWidth: 480),
                   padding: const EdgeInsets.all(30),
                   decoration: BoxDecoration(
                     color: cardBg,
@@ -195,237 +342,332 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        "NUMBER GUESSER",
-                        style: GoogleFonts.pressStart2p(
-                          fontSize: 22,
-                          color: widget.isDark ? GameTheme.accent3Dark : GameTheme.accent3Light,
-                          shadows: [
-                            Shadow(color: borderColor, offset: const Offset(2, 2)),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        "Pick a difficulty",
-                        style: TextStyle(fontSize: 24, color: textMuted),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Difficulty Bar
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: ['easy', 'medium', 'hard'].map((diff) {
-                          bool isActive = _gameState.difficulty == diff;
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: RetroButton(
-                              onPressed: () => _startGame(diff),
-                              color: isActive
-                                  ? (widget.isDark ? GameTheme.accentActiveDark : GameTheme.accentActiveLight)
-                                  : cardBg,
-                              borderColor: borderColor,
-                              textColor: isActive ? Colors.white : textMain,
-                              text: diff.toUpperCase(),
-                              fontSize: 10,
-                              isActive: isActive,
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Stats Row
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: bgColor,
-                          border: Border.all(color: borderColor, width: 4),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _buildStatItem("TRIES", "${_gameState.attempts}", textMain),
-                            _buildStatItem("HP", _gameState.over && !_gameState.won ? "DEAD" : (_gameState.won ? "WIN" : "${_gameState.maxAttempts - _gameState.attempts}"), textMain),
-                            _buildStatItem("MP", "${_gameState.hintsLeft}", textMain),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Message Box
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        constraints: const BoxConstraints(minHeight: 60),
-                        decoration: BoxDecoration(
-                          color: _getMessageBg(widget.isDark, cardBg),
-                          border: Border.all(color: _getMessageBorder(widget.isDark, borderColor), width: 4),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          _gameState.message,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: _getMessageColor(widget.isDark, textMain),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Input Group
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: borderColor, width: 4),
+                      if (!_gameStarted) ...[
+                            Text(
+                              "NUMBER GUESSER",
+                              style: TextStyle(fontFamily: 'Press Start 2P', 
+                                fontSize: 22,
+                                color: widget.isDark ? GameTheme.accent3Dark : GameTheme.accent3Light,
+                                shadows: [
+                                  Shadow(color: borderColor, offset: const Offset(2, 2)),
+                                ],
                               ),
-                              child: TextField(
-                                controller: _guessController,
-                                focusNode: _guessFocus,
-                                enabled: !_gameState.over,
-                                keyboardType: TextInputType.number,
-                                style: GoogleFonts.pressStart2p(fontSize: 16, color: textMain),
-                                decoration: InputDecoration(
-                                  hintText: "1-${_gameState.rangeMax}",
-                                  hintStyle: TextStyle(color: textMuted),
-                                  border: InputBorder.none,
-                                  filled: true,
-                                  fillColor: cardBg,
-                                  contentPadding: const EdgeInsets.all(12),
-                                ),
-                                onSubmitted: (_) => _makeGuess(),
-                              ),
+                              textAlign: TextAlign.center,
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          RetroButton(
-                            onPressed: _gameState.over ? () {} : _makeGuess,
-                            color: widget.isDark ? GameTheme.accent3Dark : GameTheme.accent3Light,
-                            borderColor: borderColor,
-                            textColor: Colors.black,
-                            text: "GUESS",
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
+                            const SizedBox(height: 10),
+                            Text(
+                              "Pick a difficulty",
+                              style: TextStyle(fontSize: 24, color: textMuted),
+                            ),
+                            const SizedBox(height: 25),
 
-                      // Action Row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: RetroButton(
-                              onPressed: (_gameState.over || _gameState.hintsLeft <= 0) ? () {} : _requestHint,
-                              color: widget.isDark ? GameTheme.accent1Dark : GameTheme.accent1Light,
-                              borderColor: borderColor,
-                              textColor: Colors.black,
-                              text: "HINT(${_gameState.hintsLeft})",
-                              disabled: _gameState.over || _gameState.hintsLeft <= 0,
+                            // Mode Selection Buttons
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: ['easy', 'medium', 'hard'].map((diff) {
+                                Color buttonColor;
+                                if (diff == 'easy') {
+                                  buttonColor = widget.isDark ? GameTheme.accent3Dark : GameTheme.accent3Light;
+                                } else if (diff == 'medium') {
+                                  buttonColor = widget.isDark ? GameTheme.accent1Dark : GameTheme.accent1Light;
+                                } else {
+                                  buttonColor = widget.isDark ? GameTheme.accent2Dark : GameTheme.accent2Light;
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                                  child: RetroButton(
+                                    onPressed: () => _startGame(diff),
+                                    color: buttonColor,
+                                    borderColor: borderColor,
+                                    textColor: Colors.black,
+                                    text: diff.toUpperCase(),
+                                    fontSize: 11,
+                                  ),
+                                );
+                              }).toList(),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: RetroButton(
-                              onPressed: () => _startGame(_gameState.difficulty),
+                            const SizedBox(height: 35),
+                            RetroButton(
+                              onPressed: _showStatsDialog,
                               color: widget.isDark ? GameTheme.accent2Dark : GameTheme.accent2Light,
                               borderColor: borderColor,
                               textColor: Colors.black,
-                              text: "RESET",
+                              text: "STATS",
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                             ),
-                          ),
-                        ],
-                      ),
-
-                      // History
-                      if (_gameState.history.isNotEmpty) ...[
-                        const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.only(top: 15),
-                          decoration: BoxDecoration(
-                            border: Border(top: BorderSide(color: borderColor, width: 4)),
-                          ),
-                          child: Column(
-                            children: [
-                              Text("LOGS", style: TextStyle(fontSize: 22, color: textMuted)),
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                alignment: WrapAlignment.center,
-                                children: _gameState.history.map((pip) {
-                                  Color pipColor;
-                                  Color pipText = Colors.black;
-                                  if (pip.direction == 'correct') {
-                                    pipColor = widget.isDark ? GameTheme.successTextDark : GameTheme.successTextLight;
-                                    pipText = Colors.white;
-                                  } else if (pip.direction == 'high') {
-                                    pipColor = widget.isDark ? GameTheme.accent2Dark : GameTheme.accent2Light;
-                                  } else {
-                                    pipColor = widget.isDark ? GameTheme.accent3Dark : GameTheme.accent3Light;
-                                  }
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: pipColor,
-                                      border: Border.all(color: borderColor, width: 4),
-                                    ),
-                                    child: Text(
-                                      "${pip.guess}",
-                                      style: GoogleFonts.pressStart2p(fontSize: 12, color: pipText),
-                                    ),
-                                  );
-                                }).toList(),
+                          ] else ...[
+                            Text(
+                              "NUMBER GUESSER",
+                              style: TextStyle(fontFamily: 'Press Start 2P', 
+                                fontSize: 22,
+                                color: widget.isDark ? GameTheme.accent3Dark : GameTheme.accent3Light,
+                                shadows: [
+                                  Shadow(color: borderColor, offset: const Offset(2, 2)),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-
-                      // Score Display
-                      if (_gameState.won) ...[
-                        const SizedBox(height: 20),
-                        Container(
-                          padding: const EdgeInsets.all(15),
-                          decoration: BoxDecoration(
-                            color: widget.isDark ? GameTheme.successBgDark : GameTheme.successBgLight,
-                            border: Border.all(
-                              color: widget.isDark ? GameTheme.successTextDark : GameTheme.successTextLight,
-                              width: 4,
+                              textAlign: TextAlign.center,
                             ),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                "SCORE:${_gameState.currentScore}",
-                                style: GoogleFonts.pressStart2p(
-                                  fontSize: 24,
-                                  color: widget.isDark ? GameTheme.successTextDark : GameTheme.successTextLight,
-                                ),
+                            const SizedBox(height: 6),
+                            Text(
+                              "MODE: ${_gameState.difficulty.toUpperCase()}",
+                              style: TextStyle(fontFamily: 'Press Start 2P', 
+                                fontSize: 10,
+                                color: textMuted,
                               ),
-                              const SizedBox(height: 5),
-                              Text(
-                                "${_gameState.attempts} ATK - ${(_gameState.startTime.difference(DateTime.now()).inMilliseconds.abs() / 1000.0).toStringAsFixed(1)}S"
-                                "${_gameState.bestScores[_gameState.difficulty] != null && _gameState.bestScores[_gameState.difficulty]! > _gameState.currentScore ? ' (BEST:${_gameState.bestScores[_gameState.difficulty]})' : ' (NEW BEST!)'}",
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 18),
+
+                            // Stats Row
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: bgColor,
+                                border: Border.all(color: borderColor, width: 4),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  _buildStatItem("TRIES", "${_gameState.attempts}", textMain),
+                                  _buildStatItem("HP", _gameState.over && !_gameState.won ? "DEAD" : (_gameState.won ? "WIN" : "${_gameState.maxAttempts - _gameState.attempts}"), textMain),
+                                  _buildStatItem("MP", "${_gameState.hintsLeft}", textMain),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Message Box
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              constraints: const BoxConstraints(minHeight: 60),
+                              decoration: BoxDecoration(
+                                color: _getMessageBg(widget.isDark, cardBg),
+                                border: Border.all(color: _getMessageBorder(widget.isDark, borderColor), width: 4),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                _gameState.message,
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 18,
-                                  color: widget.isDark ? GameTheme.successTextDark : GameTheme.successTextLight,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: _getMessageColor(widget.isDark, textMain),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Input Group or Play Again buttons
+                            if (!_gameState.over) ...[
+                              // Large retro arcade guess display screen
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: widget.isDark ? Colors.black : const Color(0xFFEFEFEF),
+                                  border: Border.all(color: borderColor, width: 4),
+                                ),
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "YOUR GUESS: ",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: textMuted,
+                                      ),
+                                    ),
+                                    Text(
+                                      _guessController.text.isEmpty ? "___" : _guessController.text,
+                                      style: TextStyle(fontFamily: 'Press Start 2P', 
+                                        fontSize: 22,
+                                        color: widget.isDark ? GameTheme.accent3Dark : GameTheme.accent3Light,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+
+                              // Custom Arcade Keypad
+                              Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      _buildKeypadKey(label: "1", onPressed: () => _onKeypadTap("1")),
+                                      _buildKeypadKey(label: "2", onPressed: () => _onKeypadTap("2")),
+                                      _buildKeypadKey(label: "3", onPressed: () => _onKeypadTap("3")),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      _buildKeypadKey(label: "4", onPressed: () => _onKeypadTap("4")),
+                                      _buildKeypadKey(label: "5", onPressed: () => _onKeypadTap("5")),
+                                      _buildKeypadKey(label: "6", onPressed: () => _onKeypadTap("6")),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      _buildKeypadKey(label: "7", onPressed: () => _onKeypadTap("7")),
+                                      _buildKeypadKey(label: "8", onPressed: () => _onKeypadTap("8")),
+                                      _buildKeypadKey(label: "9", onPressed: () => _onKeypadTap("9")),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      _buildKeypadKey(
+                                        label: "⌫",
+                                        onPressed: _onKeypadBackspace,
+                                        color: widget.isDark ? GameTheme.accent2Dark : GameTheme.accent2Light,
+                                      ),
+                                      _buildKeypadKey(label: "0", onPressed: () => _onKeypadTap("0")),
+                                      _buildKeypadKey(
+                                        label: "GO",
+                                        onPressed: _makeGuess,
+                                        color: widget.isDark ? GameTheme.accent3Dark : GameTheme.accent3Light,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 15),
+
+                              // Action Row
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: RetroButton(
+                                      onPressed: _gameState.hintsLeft <= 0 ? () {} : _requestHint,
+                                      color: widget.isDark ? GameTheme.accent1Dark : GameTheme.accent1Light,
+                                      borderColor: borderColor,
+                                      textColor: Colors.black,
+                                      text: "HINT(${_gameState.hintsLeft})",
+                                      disabled: _gameState.hintsLeft <= 0,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: RetroButton(
+                                      onPressed: _goToModeSelection,
+                                      color: widget.isDark ? GameTheme.accent2Dark : GameTheme.accent2Light,
+                                      borderColor: borderColor,
+                                      textColor: Colors.black,
+                                      text: _gameState.history.isNotEmpty ? "🔒 MODE" : "MODE",
+                                      disabled: _gameState.history.isNotEmpty,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              // Redirects back to mode selection screen
+                              SizedBox(
+                                width: double.infinity,
+                                child: RetroButton(
+                                  onPressed: _goToModeSelection,
+                                  color: widget.isDark ? GameTheme.accent1Dark : GameTheme.accent1Light,
+                                  borderColor: borderColor,
+                                  textColor: Colors.black,
+                                  text: "START A NEW GAME",
+                                  padding: const EdgeInsets.symmetric(vertical: 18),
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                      ]
-                    ],
+
+                            // History
+                            if (_gameState.history.isNotEmpty) ...[
+                              const SizedBox(height: 20),
+                              Container(
+                                padding: const EdgeInsets.only(top: 15),
+                                decoration: BoxDecoration(
+                                  border: Border(top: BorderSide(color: borderColor, width: 4)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text("LOGS", style: TextStyle(fontSize: 15, color: textMuted)),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      constraints: const BoxConstraints(maxHeight: 70),
+                                      width: double.infinity,
+                                      child: SingleChildScrollView(
+                                        child: Wrap(
+                                          spacing: 6,
+                                          runSpacing: 6,
+                                          alignment: WrapAlignment.center,
+                                          children: _gameState.history.map((pip) {
+                                            Color pipColor;
+                                            Color pipText = Colors.black;
+                                            if (pip.direction == 'correct') {
+                                              pipColor = widget.isDark ? GameTheme.successTextDark : GameTheme.successTextLight;
+                                              pipText = Colors.white;
+                                            } else if (pip.direction == 'high') {
+                                              pipColor = widget.isDark ? GameTheme.accent2Dark : GameTheme.accent2Light;
+                                            } else {
+                                              pipColor = widget.isDark ? GameTheme.accent3Dark : GameTheme.accent3Light;
+                                            }
+                                            String indicator = pip.direction == 'correct' ? " ✓" : (pip.direction == 'high' ? " ⬇️" : " ⬆️");
+                                            return Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: pipColor,
+                                                border: Border.all(color: borderColor, width: 3),
+                                              ),
+                                              child: Text(
+                                                "${pip.guess}$indicator",
+                                                style: TextStyle(fontFamily: 'Press Start 2P', fontSize: 9, color: pipText),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+
+                            // Score Display
+                            if (_gameState.won) ...[
+                              const SizedBox(height: 20),
+                              Container(
+                                padding: const EdgeInsets.all(15),
+                                decoration: BoxDecoration(
+                                  color: widget.isDark ? GameTheme.successBgDark : GameTheme.successBgLight,
+                                  border: Border.all(
+                                    color: widget.isDark ? GameTheme.successTextDark : GameTheme.successTextLight,
+                                    width: 4,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      "SCORE:${_gameState.currentScore}",
+                                      style: TextStyle(fontFamily: 'Press Start 2P', 
+                                        fontSize: 24,
+                                        color: widget.isDark ? GameTheme.successTextDark : GameTheme.successTextLight,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      "${_gameState.attempts} ATK - ${_gameState.elapsedTime.toStringAsFixed(1)}S"
+                                      "${_gameState.bestScores[_gameState.difficulty] != null && _gameState.bestScores[_gameState.difficulty]! > _gameState.currentScore ? ' (BEST:${_gameState.bestScores[_gameState.difficulty]})' : ' (NEW BEST!)'}",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: widget.isDark ? GameTheme.successTextDark : GameTheme.successTextLight,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
           // Hint Toast
           AnimatedPositioned(
@@ -445,20 +687,43 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 ),
                 child: Text(
                   _hintToast,
-                  style: GoogleFonts.pressStart2p(fontSize: 11, color: Colors.black),
+                  style: TextStyle(fontFamily: 'Press Start 2P', fontSize: 11, color: Colors.black),
                 ),
               ),
             ),
           ),
+
+          // Confetti (drawn on top of the main container/card)
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Color(0xFFFACC15), Color(0xFFF472B6), 
+                Color(0xFF38BDF8), Color(0xFF4ADE80), 
+                Color(0xFFE94560), Color(0xFFFF2E63)
+              ],
+              createParticlePath: (size) {
+                final path = Path();
+                path.addRect(Rect.fromLTWH(0, 0, 12, 12));
+                return path;
+              },
+            ),
+          ),
+
         ],
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildStatItem(String label, String value, Color textColor) {
     return Column(
       children: [
-        Text(value, style: GoogleFonts.pressStart2p(fontSize: 18, color: textColor)),
+        Text(value, style: TextStyle(fontFamily: 'Press Start 2P', fontSize: 18, color: textColor)),
         const SizedBox(height: 4),
         Text(label, style: TextStyle(fontSize: 18, color: textColor)),
       ],
@@ -544,7 +809,7 @@ class _RetroButtonState extends State<RetroButton> {
           child: Text(
             widget.text,
             textAlign: TextAlign.center,
-            style: GoogleFonts.pressStart2p(fontSize: widget.fontSize, color: widget.textColor),
+            style: TextStyle(fontFamily: 'Press Start 2P', fontSize: widget.fontSize, color: widget.textColor),
           ),
         ),
       ),
@@ -578,5 +843,86 @@ class PixelBgPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant PixelBgPainter oldDelegate) {
     return oldDelegate.offset != offset || oldDelegate.patternColor != patternColor;
+  }
+}
+
+enum PixelSweepStyle {
+  topLeft,
+  centerOutward,
+  outwardToCenter,
+}
+
+class PixelSweepClipper extends CustomClipper<Path> {
+  final double progress;
+  final PixelSweepStyle style;
+
+  PixelSweepClipper({required this.progress, required this.style});
+
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+    if (progress == 0.0) return path;
+    if (progress == 1.0) {
+      path.addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+      return path;
+    }
+
+    const int cols = 12;
+    const int rows = 22;
+
+    final double blockW = size.width / cols;
+    final double blockH = size.height / rows;
+    
+    final double centerRow = rows / 2;
+    final double centerCol = cols / 2;
+    final double maxDist = sqrt(centerRow * centerRow + centerCol * centerCol);
+
+    for (int r = 0; r < rows; r++) {
+      for (int c = 0; c < cols; c++) {
+        double delay;
+        
+        switch (style) {
+          case PixelSweepStyle.topLeft:
+            delay = (r / rows * 0.4) + (c / cols * 0.2);
+            break;
+          case PixelSweepStyle.centerOutward:
+            double dr = r - centerRow;
+            double dc = c - centerCol;
+            double dist = sqrt(dr * dr + dc * dc);
+            double normalizedDist = dist / maxDist;
+            delay = normalizedDist * 0.6;
+            break;
+          case PixelSweepStyle.outwardToCenter:
+            double dr = r - centerRow;
+            double dc = c - centerCol;
+            double dist = sqrt(dr * dr + dc * dc);
+            double normalizedDist = dist / maxDist;
+            delay = (1.0 - normalizedDist) * 0.6;
+            break;
+        }
+
+        double blockProgress = (progress - delay).clamp(0.0, 0.4) / 0.4;
+        
+        if (blockProgress > 0.0) {
+          double scale = Curves.easeInOut.transform(blockProgress);
+          
+          if (scale >= 1.0) {
+            path.addRect(Rect.fromLTWH(c * blockW - 0.5, r * blockH - 0.5, blockW + 1, blockH + 1));
+          } else {
+            final double cx = c * blockW + blockW / 2;
+            final double cy = r * blockH + blockH / 2;
+            final double w = blockW * scale;
+            final double h = blockH * scale;
+            path.addRect(Rect.fromLTWH(cx - w / 2 - 0.5, cy - h / 2 - 0.5, w + 1, h + 1));
+          }
+        }
+      }
+    }
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant PixelSweepClipper oldClipper) {
+    return oldClipper.progress != progress || oldClipper.style != style;
   }
 }

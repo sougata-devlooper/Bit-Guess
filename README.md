@@ -9,8 +9,8 @@ A bold, interactive, and visually striking number guessing game built with a mod
 
 ### New verison
 ![Game Screenshot](./interface/materials/ss3.png)  
-![Game Screenshot](./interface/materials/ss4.png) 
-![Game Screenshot](./interface/materials/ss5.png)
+![Game Screenshot](./interface/materials/ss4.png)  
+![Game Screenshot](./interface/materials/ss5.png) 
 
 👉 **[Try out by your own](https://number-guessing-application-one.vercel.app/)**
 

@@ -171,9 +171,10 @@ def hint():
 @game.route("/stats")
 def stats():
     return jsonify({
-        "attempts": session.get("attempts", 0),
-        "history": session.get("history", []),
+        "attempts":    session.get("attempts", 0),
+        "history":     session.get("history", []),
         "best_scores": session.get("best_scores", {}),
+        "target":      session.get("target") if session.get("won") else None,
     })
 
 

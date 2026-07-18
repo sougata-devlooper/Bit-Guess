@@ -1,0 +1,538 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+/* ── Reset ── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+/* ══════════════════════════════════════════
+   THEME VARIABLES  (game_theme.dart)
+   ══════════════════════════════════════════ */
+:root {
+  --bg-color:      #4ade80;
+  --card-bg:       #ffffff;
+  --text-main:     #000000;
+  --text-muted:    #555555;
+  --border-color:  #000000;
+  --accent-1:      #facc15;
+  --accent-2:      #f472b6;
+  --accent-3:      #38bdf8;
+  --accent-active: #f97316;
+  --success-bg:    #bbf7d0;
+  --danger-bg:     #fecdd3;
+  --success-text:  #166534;
+  --danger-text:   #9f1239;
+  --btn-shadow:        4px 4px 0px var(--border-color);
+  --btn-shadow-active: 0px 0px 0px transparent;
+  --container-shadow:  12px 12px 0px var(--border-color);
+}
+
+[data-theme="dark"] {
+  --bg-color:      #2e0249;
+  --card-bg:       #1a1a2e;
+  --text-main:     #e94560;
+  --text-muted:    #a0a0a0;
+  --border-color:  #e94560;
+  --accent-1:      #f9a826;
+  --accent-2:      #ff2e63;
+  --accent-3:      #08d9d6;
+  --accent-active: #ff2e63;
+  --success-bg:    #0f341c;
+  --danger-bg:     #3d0a16;
+  --success-text:  #4ade80;
+  --danger-text:   #f87171;
+  --btn-shadow:        4px 4px 0px var(--border-color);
+  --btn-shadow-active: 0px 0px 0px transparent;
+  --container-shadow:  12px 12px 0px var(--border-color);
+}
+
+/* ── Body ── */
+body {
+  font-family: 'VT323', monospace;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow-x: hidden;
+  transition: background-color 0.4s;
+}
+
+/* ── Backgrounds ── */
+#bg-canvas, #confetti-canvas {
+  position: fixed;
+  top:0; left:0; width:100%; height:100%;
+  pointer-events: none;
+}
+#bg-canvas    { z-index: 0; }
+#confetti-canvas { z-index: 50; }
+
+/* ══════════════════════════════════════════
+   THEME RIPPLE ANIMATION
+   ══════════════════════════════════════════ */
+#theme-ripple {
+  position: fixed;
+  border-radius: 50%;
+  transform: scale(0);
+  z-index: 999;
+  pointer-events: none;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s;
+  opacity: 0;
+}
+#theme-ripple.ripple-expand {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* ── Page System ── */
+.page {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+  padding: 20px 0;
+  /* Transitions */
+  opacity: 1;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.page.page-enter {
+  opacity: 0;
+  transform: translateX(60px);
+}
+.page.page-exit {
+  opacity: 0;
+  transform: translateX(-60px);
+  pointer-events: none;
+}
+
+/* ── Retro Button Base ── */
+.retro-btn {
+  font-family: 'Press Start 2P', monospace;
+  border: 4px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-main);
+  cursor: pointer;
+  box-shadow: var(--btn-shadow);
+  transition: transform 0.08s, box-shadow 0.08s, background 0.2s, color 0.2s, border-color 0.2s;
+  display: inline-block;
+  text-align: center;
+  user-select: none;
+}
+.retro-btn:active, .retro-btn.pressed {
+  transform: translate(4px,4px);
+  box-shadow: var(--btn-shadow-active);
+}
+.retro-btn:disabled, .retro-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: translate(4px,4px);
+  box-shadow: var(--btn-shadow-active);
+}
+
+/* ── Theme Toggle ── */
+.theme-toggle {
+  position: fixed;
+  top: 20px; right: 20px;
+  z-index: 100;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+/* ── Game Container (card) ── */
+.game-container {
+  position: relative;
+  background: var(--card-bg);
+  border: 6px solid var(--border-color);
+  padding: 28px;
+  max-width: 460px;
+  width: 92%;
+  text-align: center;
+  box-shadow: var(--container-shadow);
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+/* ══════════════════════════════════════════
+   PAGE 1 — HOME
+   ══════════════════════════════════════════ */
+.app-logo {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  margin: 0 auto 16px;
+  display: block;
+  border: 4px solid var(--border-color);
+  box-shadow: 6px 6px 0px var(--border-color);
+  border-radius: 16px;
+}
+
+h1 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.3rem;
+  color: var(--accent-3);
+  text-shadow: 2px 2px 0px var(--border-color);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.subtitle {
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.difficulty-bar {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.diff-btn {
+  font-size: 0.6rem;
+  padding: 8px 10px;
+}
+
+.diff-btn:hover:not(.active):not(:disabled) {
+  background: var(--accent-1);
+  color: #000;
+}
+
+.diff-btn.active {
+  background: var(--accent-active);
+  color: #fff;
+  transform: translate(4px,4px);
+  box-shadow: var(--btn-shadow-active);
+}
+
+.diff-description {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+  min-height: 24px;
+}
+
+.btn-start {
+  background: var(--accent-3);
+  color: #000;
+  padding: 14px 30px;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+/* ══════════════════════════════════════════
+   PAGE 2 — GAME
+   ══════════════════════════════════════════ */
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.app-logo-small {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  border: 3px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 3px 3px 0px var(--border-color);
+  flex-shrink: 0;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
+  margin-bottom: 18px;
+  border: 4px solid var(--border-color);
+  padding: 10px;
+  background: var(--bg-color);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.stat-item { display:flex; flex-direction:column; align-items:center; }
+
+.stat-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1rem;
+  margin-bottom: 4px;
+  color: var(--text-main);
+}
+
+.stat-label {
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.message-box {
+  border: 4px solid var(--border-color);
+  background: var(--card-bg);
+  padding: 12px;
+  margin-bottom: 18px;
+  min-height: 58px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.message-text {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--text-main);
+}
+
+.message-box.win  { background: var(--success-bg); border-color: var(--success-text); }
+.message-box.win  .message-text { color: var(--success-text); }
+.message-box.lose { background: var(--danger-bg);  border-color: var(--danger-text); }
+.message-box.lose .message-text { color: var(--danger-text); }
+
+.input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.guess-input {
+  flex: 1;
+  background: var(--card-bg);
+  border: 4px solid var(--border-color);
+  padding: 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  outline: none;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  min-width: 0;
+}
+
+.guess-input:focus { background: var(--accent-1); color: #000; }
+.guess-input:disabled { opacity:0.6; cursor:not-allowed; }
+
+.btn-primary {
+  background: var(--accent-3);
+  color: #000;
+  padding: 12px 14px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.action-row {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-hint {
+  flex:1;
+  background: var(--accent-1);
+  color: #000;
+  padding: 12px 10px;
+  font-size: 0.65rem;
+}
+
+.btn-reset {
+  flex:1;
+  background: var(--accent-2);
+  color: #000;
+  padding: 12px 10px;
+  font-size: 0.75rem;
+}
+
+/* History */
+.history-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 4px solid var(--border-color);
+}
+
+.history-label {
+  font-size: 1.3rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.history-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.history-pip {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  padding: 5px 9px;
+  border: 4px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-main);
+}
+
+.history-pip.low     { background: var(--accent-3); color: #000; }
+.history-pip.high    { background: var(--accent-2); color: #000; }
+.history-pip.correct { background: var(--success-text); color: #fff; }
+
+/* ══════════════════════════════════════════
+   PAGE 3 — RESULT
+   ══════════════════════════════════════════ */
+.result-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 30px 28px;
+}
+
+.result-status {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.3rem;
+  color: var(--accent-3);
+  text-shadow: 2px 2px 0px var(--border-color);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.result-status.lose-status {
+  color: var(--danger-text);
+}
+
+.result-number {
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.result-number span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.1rem;
+  color: var(--accent-active);
+}
+
+.result-score-box {
+  width: 100%;
+  padding: 14px;
+  background: var(--success-bg);
+  border: 4px solid var(--success-text);
+  text-align: center;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.result-score-box.lose-box {
+  background: var(--danger-bg);
+  border-color: var(--danger-text);
+}
+
+.score-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.4rem;
+  color: var(--success-text);
+  margin-bottom: 6px;
+}
+
+.lose-box .score-value { color: var(--danger-text); }
+
+.score-detail {
+  font-size: 1.1rem;
+  color: var(--success-text);
+}
+
+.lose-box .score-detail { color: var(--danger-text); }
+
+.result-stats {
+  display: flex;
+  justify-content: space-evenly;
+  width: 100%;
+  border: 4px solid var(--border-color);
+  padding: 10px;
+  background: var(--bg-color);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.result-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-play-again {
+  flex: 1;
+  background: var(--accent-3);
+  color: #000;
+  padding: 12px 10px;
+  font-size: 0.7rem;
+}
+
+.btn-home {
+  flex: 1;
+  background: var(--accent-1);
+  color: #000;
+  padding: 12px 10px;
+  font-size: 0.7rem;
+}
+
+/* ══════════════════════════════════════════
+   HINT TOAST
+   ══════════════════════════════════════════ */
+.hint-toast {
+  position: fixed;
+  bottom: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-1);
+  border: 4px solid var(--border-color);
+  box-shadow: 8px 8px 0px var(--border-color);
+  color: #000;
+  padding: 14px 20px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  z-index: 200;
+  pointer-events: none;
+  max-width: 88vw;
+  white-space: normal;
+  text-align: center;
+  transition: bottom 0.25s ease;
+}
+
+.hint-toast.show { bottom: 28px; }
+
+/* ══════════════════════════════════════════
+   SHAKE ANIMATION
+   ══════════════════════════════════════════ */
+@keyframes shake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-10px); }
+  40%  { transform: translateX(10px); }
+  60%  { transform: translateX(-8px); }
+  80%  { transform: translateX(8px); }
+  100% { transform: translateX(0); }
+}
+.shake { animation: shake 0.32s ease; }
+
+/* ══════════════════════════════════════════
+   WIN PULSE ANIMATION
+   ══════════════════════════════════════════ */
+@keyframes winPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
+}
+.win-pulse { animation: winPulse 0.8s ease 2; }
+
+/* ── Scrollbar ── */
+.history-track::-webkit-scrollbar { width: 8px; }
+.history-track::-webkit-scrollbar-track { background:var(--bg-color); border-left:4px solid var(--border-color); }
+.history-track::-webkit-scrollbar-thumb { background:var(--border-color); }
+
+/* ── Responsive ── */
+@media (max-width: 400px) {
+  h1, .result-status { font-size: 0.95rem; }
+  .diff-btn { font-size: 0.48rem; padding: 6px 7px; }
+  .game-container { padding: 16px; }
+  .app-logo { width: 90px; height: 90px; }
+}

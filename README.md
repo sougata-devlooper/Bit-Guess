@@ -4,12 +4,12 @@ A bold, interactive, and visually striking number guessing game built with a mod
 ## Screenshots
 
 <p align="center">
-  <img src="./interface/materials/ss_m_1_1.png" alt="Screenshot 1" width="200"/>
-  <img src="./interface/materials/ss_m_1_2.png" alt="Screenshot 2" width="200"/>
-  <img src="./interface/materials/ss_m_2_1.png" alt="Screenshot 3" width="200"/>
-  <img src="./interface/materials/ss_m_2_2.png" alt="Screenshot 4" width="200"/>
-  <img src="./interface/materials/ss_m_3_1.png" alt="Screenshot 5" width="200"/>
-  <img src="./interface/materials/ss_m_3_2.png" alt="Screenshot 6" width="200"/>
+  <img src="./interface/materials/ss_m_1_1.jpeg" alt="Screenshot 1" width="200"/>
+  <img src="./interface/materials/ss_m_1_2.jpeg" alt="Screenshot 2" width="200"/>
+  <img src="./interface/materials/ss_m_2_1.jpeg" alt="Screenshot 3" width="200"/>
+  <img src="./interface/materials/ss_m_2_2.jpeg" alt="Screenshot 4" width="200"/>
+  <img src="./interface/materials/ss_m_3_1.jpeg" alt="Screenshot 5" width="200"/>
+  <img src="./interface/materials/ss_m_3_2.jpeg" alt="Screenshot 6" width="200"/>
 </p>
 
 👉 **[Try out by your own](https://number-guessing-application-one.vercel.app/)**

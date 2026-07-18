@@ -2,24 +2,14 @@
 A bold, interactive, and visually striking number guessing game built with a modern **neo-brutalist dual themed UI** and smooth backend logic.
 
 ## Screenshots
-### Older Version
 
 <p align="center">
-  <img src="./interface/materials/ss1_1.png" alt="Screenshot 1" width="350"/>
-  <img src="./interface/materials/ss1_2.png" alt="Screenshot 2" width="350"/>
-</p>
-
-### Latest Version
-
-<p align="center">
-  <img src="./interface/materials/ss2_1.png" alt="Screenshot 3" width="350"/>
-  <img src="./interface/materials/ss2_2.png" alt="Screenshot 4" width="350"/>
-  <br/>
-  <img src="./interface/materials/ss3_1.png" alt="Screenshot 5" width="350"/>
-  <img src="./interface/materials/ss3_2.png" alt="Screenshot 6" width="350"/>
-  <br/>
-  <img src="./interface/materials/ss4_1.png" alt="Screenshot 7" width="350"/>
-  <img src="./interface/materials/ss4_2.png" alt="Screenshot 8" width="350"/>
+  <img src="./interface/materials/ss_m_1_1.png" alt="Screenshot 1" width="200"/>
+  <img src="./interface/materials/ss_m_1_2.png" alt="Screenshot 2" width="200"/>
+  <img src="./interface/materials/ss_m_2_1.png" alt="Screenshot 3" width="200"/>
+  <img src="./interface/materials/ss_m_2_2.png" alt="Screenshot 4" width="200"/>
+  <img src="./interface/materials/ss_m_3_1.png" alt="Screenshot 5" width="200"/>
+  <img src="./interface/materials/ss_m_3_2.png" alt="Screenshot 6" width="200"/>
 </p>
 
 👉 **[Try out by your own](https://number-guessing-application-one.vercel.app/)**
